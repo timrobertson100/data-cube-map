@@ -1,0 +1,144 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>io.mapped</groupId>
+  <artifactId>datacube-tile-server</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <name>Data Cube Tile Server</name>
+  <url>http://maven.apache.org</url>
+
+  <properties>
+    <!-- TODO: Investigate why 2.6.1 generates uncompilable code -->
+    <protoc.version>2.5.0</protoc.version>
+    <logback.version>1.1.2</logback.version>
+    <!-- laziness: rely on transient dependencies from DW -->
+    <dropwizard.version>0.7.1</dropwizard.version>
+    <!-- Plugins -->
+    <maven-protoc-plugin.version>0.3.5</maven-protoc-plugin.version>
+    <build-helper-maven.version>1.9.1</build-helper-maven.version>
+    <maven-shade-plugin.version>1.6</maven-shade-plugin.version>
+  </properties>
+
+  <build>
+    <plugins>
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <source>1.7</source>
+          <target>1.7</target>
+        </configuration>
+      </plugin>
+      <!-- Generate source for Protobuf definitions -->
+      <plugin>
+        <groupId>net.dongliu</groupId>
+        <artifactId>maven-protoc-plugin</artifactId>
+        <version>${maven-protoc-plugin.version}</version>
+        <configuration>
+          <protocExecutable>/usr/local/bin/protoc</protocExecutable>
+          <outputDirectory>${project.basedir}/src/main/java-generated/</outputDirectory>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>compile</goal>
+              <goal>testCompile</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- Add the generated sources to the classpath for IDEs -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>${build-helper-maven.version}</version>
+        <executions>
+          <execution>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${project.basedir}/src/main/java-generated/</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <!-- shade a fat jar for dropwizard -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>${maven-shade-plugin.version}</version>
+        <configuration>
+          <createDependencyReducedPom>true</createDependencyReducedPom>
+          <filters>
+            <filter>
+              <artifact>*:*</artifact>
+              <excludes>
+                <exclude>META-INF/*.SF</exclude>
+                <exclude>META-INF/*.DSA</exclude>
+                <exclude>META-INF/*.RSA</exclude>
+              </excludes>
+            </filter>
+          </filters>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <shadedArtifactAttached>true</shadedArtifactAttached>
+              <transformers>
+                <transformer
+                  implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+                <transformer
+                  implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <mainClass>io.mapped.TileServerApplication</mainClass>
+                </transformer>
+              </transformers>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <dependencies>
+    <!--
+      TODO: review and refine.
+      Developed offline so making do with what we have cached...
+    -->
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+      <version>${protoc.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.dropwizard</groupId>
+      <artifactId>dropwizard-core</artifactId>
+      <version>${dropwizard.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.dropwizard</groupId>
+      <artifactId>dropwizard-testing</artifactId>
+      <version>${dropwizard.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.dropwizard</groupId>
+      <artifactId>dropwizard-jersey</artifactId>
+      <version>${dropwizard.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>${logback.version}</version>
+      <scope>runtime</scope>
+    </dependency>
+  </dependencies>
+</project>

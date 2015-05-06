@@ -1,0 +1,26 @@
+package io.mapped.proto;
+
+option optimize_for = LITE_RUNTIME;
+
+/**
+ * A basic tile with a repeating stream of pixels locations (i.e. x,y,x,y,x,y...) and a single data channel of counts.
+ * The data channel must be half the length of the pixels aligned so that the count matches the pixel - that is, the
+ * channel data item at index 0 represents the count for the pixel defined by the pixels indexed at 0 (x) and 1 (y).
+ *
+ * This is a simple tile used only for demonstration purposes.  Changes to make:
+ *  i.   Make the pixels relative to the previous (improves compression)
+ *  ii.  Support necessary metadata for channels
+ *  iii. Review all types and ensure the smallest is used (i.e. 256 pixels requires 8 bytes only)
+ *  iv.  ZigZag encode if needed
+ */
+message DatacubeTile {
+  // repeating x,y data
+  repeated uint32 pixels = 1 [ packed = true ];
+
+  message Channel {
+    repeated uint32 value = 1 [ packed = true ];
+  }
+
+  // must have length of pixelCount
+  repeated Channel channel = 2;
+}
